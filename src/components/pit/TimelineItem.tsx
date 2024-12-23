@@ -1,9 +1,11 @@
 "use client"
 
 import { motion } from "framer-motion"
-import Image from "next/image"
 import { ChevronDown } from "lucide-react"
 import { TimelineEntry } from "@/types/pit"
+import TimelineCard from "./TimelineCard"
+import TimelineConnector from "./TimelineConnector"
+import TimelineMedia from "./TimelineMedia"
 
 interface TimelineItemProps {
     entry: TimelineEntry
@@ -30,51 +32,33 @@ export default function TimelineItem({
                                          isExpanded,
                                          onExpand
                                      }: TimelineItemProps) {
-    const isLeft = side === "left"
-
     const handleClick = (e: React.MouseEvent) => {
-        // Prevent click from bubbling to parent elements
         e.stopPropagation()
         onExpand(entry._id.toString())
     }
 
-    const cardContent = (
-        <div
-            className="bg-white rounded-lg shadow p-6 transition-transform duration-200 hover:-translate-y-1 cursor-pointer"
-            onClick={handleClick}
-        >
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-            >
-                <Content
-                    entry={entry}
-                    isAdmin={isAdmin}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                    isExpanded={isExpanded}
-                />
-            </motion.div>
-        </div>
+    const content = (
+        <TimelineCard side={side} onClick={handleClick}>
+            <Content
+                entry={entry}
+                isAdmin={isAdmin}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                isExpanded={isExpanded}
+            />
+        </TimelineCard>
     )
 
     return (
         <div className="grid grid-cols-[1fr,auto,1fr] items-stretch">
-            {/* Left content */}
-            <div className={isLeft ? "pr-8" : ""}>
-                {isLeft && <div className="ml-auto mr-0 max-w-lg">{cardContent}</div>}
+            <div className={side === "left" ? "pr-8" : ""}>
+                {side === "left" && content}
             </div>
 
-            {/* Center line and dot */}
-            <div className="flex flex-col items-center w-4">
-                <div className={`w-0.5 h-6 bg-blue-500 mb-2 shrink-0 ${isFirst ? 'opacity-0' : ''}`} />
-                <div className="w-3 h-3 bg-blue-500 rounded-full shrink-0" />
-                <div className={`w-0.5 bg-blue-500 flex-1 mt-2 ${isLast ? 'opacity-0' : ''}`} />
-            </div>
+            <TimelineConnector isFirst={isFirst} isLast={isLast} />
 
-            {/* Right content */}
-            <div className={!isLeft ? "pl-8" : ""}>
-                {!isLeft && <div className="ml-0 mr-auto max-w-lg">{cardContent}</div>}
+            <div className={side === "right" ? "pl-8" : ""}>
+                {side === "right" && content}
             </div>
         </div>
     )
@@ -88,7 +72,6 @@ function Content({ entry, isAdmin, onEdit, onDelete, isExpanded }: {
     isExpanded: boolean
 }) {
     const handleButtonClick = (e: React.MouseEvent) => {
-        // Prevent button clicks from triggering card expansion
         e.stopPropagation()
     }
 
@@ -127,33 +110,7 @@ function Content({ entry, isAdmin, onEdit, onDelete, isExpanded }: {
                 </motion.div>
             )}
 
-            {entry.media?.length > 0 && (
-                <div className="space-y-4 mt-4">
-                    {entry.media.map((media) => (
-                        <div key={media._id.toString()} className="rounded-lg overflow-hidden">
-                            {media.type === "image" ? (
-                                <div className="aspect-video relative">
-                                    <Image
-                                        src={media.url}
-                                        alt={media.caption || ""}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                </div>
-                            ) : (
-                                <iframe
-                                    src={media.url}
-                                    title={media.caption || "YouTube video"}
-                                    className="w-full aspect-video"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                />
-                            )}
-                            {media.caption && <p className="mt-2 text-sm text-gray-500">{media.caption}</p>}
-                        </div>
-                    ))}
-                </div>
-            )}
+            <TimelineMedia media={entry.media || []} />
 
             <div className="flex flex-wrap gap-2 mt-4">
                 {entry.tags?.map((tag) => (
