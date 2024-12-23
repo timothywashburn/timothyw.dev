@@ -57,15 +57,9 @@ export default function Timeline({ onEdit }: TimelineProps) {
     )
 
     return (
-        <div className="max-w-3xl mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold text-center mb-2">Pit Journey Timeline</h1>
-            <p className="text-gray-600 text-center mb-12">A chronicle of my adventures and achievements in Hypixel's Pit</p>
-
+        <div className="max-w-6xl mx-auto px-4 py-8">
             <div className="relative">
-                {/* Vertical timeline line */}
-                <div className="absolute left-[5px] top-0 bottom-0 w-px bg-gray-200" />
-
-                {/* Timeline items */}
+                <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-blue-500" />
                 <div className="relative">
                     {entries.map((entry, index) => (
                         <TimelineItem
@@ -75,6 +69,7 @@ export default function Timeline({ onEdit }: TimelineProps) {
                             isAdmin={isAdmin}
                             onEdit={onEdit}
                             onDelete={handleDelete}
+                            side={index % 2 === 0 ? "left" : "right"}
                         />
                     ))}
                 </div>
