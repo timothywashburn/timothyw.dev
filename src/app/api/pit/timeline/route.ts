@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth/config"
 import dbConnect from "@/lib/db/mongoose"
-import { TimelineModel } from "@/lib/db/models/timeline"
+import { TimelineEntryModel } from "@/lib/db/models/timelineEntry"
 
 export async function GET(req: Request) {
     await dbConnect()
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
     if (tags?.length) query.tags = { $in: tags }
     if (search) query.$text = { $search: search }
 
-    const entries = await TimelineModel.find(query).sort({ date: -1 })
+    const entries = await TimelineEntryModel.find(query).sort({ date: -1 })
     return NextResponse.json(entries)
 }
 
@@ -30,8 +30,16 @@ export async function POST(req: Request) {
 
     await dbConnect()
     const data = await req.json()
-    const entry = await TimelineModel.create(data)
-    return NextResponse.json({ _id: entry._id.toString() })
+    console.log('Received data:', data)
+
+    try {
+        const entry = await TimelineEntryModel.create(data)
+        console.log('Created entry:', entry)
+        return NextResponse.json({ _id: entry._id.toString() })
+    } catch (error) {
+        console.error('Error creating entry:', error)
+        return new NextResponse("Error creating entry", { status: 500 })
+    }
 }
 
 export async function PUT(req: Request) {
@@ -42,7 +50,7 @@ export async function PUT(req: Request) {
 
     await dbConnect()
     const { _id, ...updateData } = await req.json()
-    await TimelineModel.findByIdAndUpdate(_id, updateData)
+    await TimelineEntryModel.findByIdAndUpdate(_id, updateData)
     return new NextResponse(null, { status: 200 })
 }
 
@@ -54,6 +62,6 @@ export async function DELETE(req: Request) {
 
     await dbConnect()
     const { _id } = await req.json()
-    await TimelineModel.findByIdAndDelete(_id)
+    await TimelineEntryModel.findByIdAndDelete(_id)
     return new NextResponse(null, { status: 200 })
 }

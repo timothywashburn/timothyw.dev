@@ -1,6 +1,8 @@
+"use client"
+
 import { useState } from "react"
 import { TimelineEntry, Media } from "@/types/pit"
-import { ObjectId } from "mongodb"
+import { timelineService } from "@/lib/services/timelineService"
 
 interface Props {
     entry?: TimelineEntry
@@ -13,61 +15,29 @@ export default function TimelineEditor({ entry, onSave, onCancel }: Props) {
     const [date, setDate] = useState(entry?.date ? new Date(entry.date).toISOString().split("T")[0] : "")
     const [description, setDescription] = useState(entry?.description || "")
     const [tags, setTags] = useState(entry?.tags?.join(", ") || "")
-    const [uploading, setUploading] = useState(false)
     const [media, setMedia] = useState<Media[]>(entry?.media || [])
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
 
-        const formData = {
-            _id: entry?._id || "",
+        const entryData: Partial<TimelineEntry> = {
             title,
             date: new Date(date),
-            description,
+            description: description || undefined,
             tags: tags.split(",").map(t => t.trim()).filter(Boolean),
             media,
-            createdAt: entry?.createdAt || new Date(),
-            updatedAt: new Date()
         }
 
-        onSave(formData as TimelineEntry)
-    }
-
-    async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-        if (!e.target.files?.length) return
-
-        setUploading(true)
-        const file = e.target.files[0]
-        const formData = new FormData()
-        formData.append("file", file)
-        formData.append("timelineEntryId", entry?._id?.toString() || "temp")
-
         try {
-            const res = await fetch("/api/pit/media", {
-                method: "POST",
-                body: formData
-            })
-
-            if (!res.ok) throw new Error("Upload failed")
-
-            const newMedia = await res.json()
-            setMedia([...media, newMedia])
+            if (entry?._id) {
+                await timelineService.updateEntry({ ...entryData, _id: entry._id } as TimelineEntry)
+                onSave({ ...entryData, _id: entry._id } as TimelineEntry)
+            } else {
+                const id = await timelineService.createEntry(entryData)
+                onSave({ ...entryData, _id: id } as TimelineEntry)
+            }
         } catch (error) {
-            console.error("Upload error:", error)
-        } finally {
-            setUploading(false)
-        }
-    }
-
-    async function handleMediaDelete(mediaId: string | ObjectId) {
-        try {
-            await fetch("/api/pit/media", {
-                method: "DELETE",
-                body: JSON.stringify({ _id: mediaId.toString() })
-            })
-            setMedia(media.filter(m => m._id.toString() !== mediaId.toString()))
-        } catch (error) {
-            console.error("Delete error:", error)
+            console.error("Error saving entry:", error)
         }
     }
 
@@ -96,12 +66,11 @@ export default function TimelineEditor({ entry, onSave, onCancel }: Props) {
             </div>
 
             <div>
-                <label className="block text-sm font-medium mb-2">Description</label>
+                <label className="block text-sm font-medium mb-2">Description (optional)</label>
                 <textarea
                     value={description}
                     onChange={e => setDescription(e.target.value)}
                     className="w-full px-3 py-2 border rounded-md h-32"
-                    required
                 />
             </div>
 
@@ -114,36 +83,6 @@ export default function TimelineEditor({ entry, onSave, onCancel }: Props) {
                     className="w-full px-3 py-2 border rounded-md"
                     placeholder="tag1, tag2, tag3"
                 />
-            </div>
-
-            <div>
-                <label className="block text-sm font-medium mb-2">Media</label>
-                <input
-                    type="file"
-                    onChange={handleFileUpload}
-                    accept="image/*"
-                    disabled={uploading}
-                    className="mb-4"
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                    {media.map(item => (
-                        <div key={item._id.toString()} className="relative">
-                            <img
-                                src={item.url}
-                                alt={item.caption || ""}
-                                className="w-full h-48 object-cover rounded-lg"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => handleMediaDelete(item._id)}
-                                className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"
-                            >
-                                ×
-                            </button>
-                        </div>
-                    ))}
-                </div>
             </div>
 
             <div className="flex gap-4">

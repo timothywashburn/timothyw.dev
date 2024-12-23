@@ -3,7 +3,8 @@ import { writeFile, mkdir } from "fs/promises"
 import path from "path"
 import { auth } from "@/lib/auth/config"
 import dbConnect from "@/lib/db/mongoose"
-import { MediaModel } from "@/lib/db/models/media"
+import { TimelineEntryModel } from "@/lib/db/models/timelineEntry"
+import { Media } from "@/types/pit"
 
 const STORAGE_PATH = path.join(process.cwd(), "storage", "pit")
 
@@ -38,12 +39,20 @@ export async function POST(req: Request) {
     const filepath = path.join(dir, filename)
     await writeFile(filepath, buffer)
 
-    const media = await MediaModel.create({
+    const entry = await TimelineEntryModel.findById(timelineEntryId)
+    if (!entry) {
+        return new NextResponse("Timeline entry not found", { status: 404 })
+    }
+
+    const media = {
         type: "image",
         url: `/storage/pit/${year}/${month}/${filename}`,
         caption,
         timelineEntryId
-    })
+    }
+
+    entry.media.push(media)
+    await entry.save()
 
     return NextResponse.json(media)
 }
@@ -55,7 +64,16 @@ export async function DELETE(req: Request) {
     }
 
     await dbConnect()
-    const { _id } = await req.json()
-    await MediaModel.findByIdAndDelete(_id)
+
+    const { _id, timelineEntryId } = await req.json()
+
+    const entry = await TimelineEntryModel.findById(timelineEntryId)
+    if (!entry) {
+        return new NextResponse("Timeline entry not found", { status: 404 })
+    }
+
+    entry.media = entry.media.filter((m: Media) => m._id.toString() !== _id)
+    await entry.save()
+
     return new NextResponse(null, { status: 200 })
 }
