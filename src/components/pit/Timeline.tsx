@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation"
 import { TimelineEntry } from "@/types/pit"
 import { timelineService } from "@/lib/services/timelineService"
 import TimelineItem from "./TimelineItem"
+import { useToast } from "@/components/ui/Toast"
+import DeleteModal from "@/components/ui/modal/DeleteModal"
 
 interface TimelineProps {
     onEdit?: (entry: TimelineEntry) => void
@@ -15,8 +17,13 @@ export default function Timeline({ onEdit }: TimelineProps) {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [expandedId, setExpandedId] = useState<string | null>(null)
+    const [deleteModal, setDeleteModal] = useState<{
+        isOpen: boolean;
+        entryId?: string;
+    }>({ isOpen: false });
     const pathname = usePathname()
     const isAdmin = pathname.startsWith("/admin")
+    const { showToast } = useToast()
 
     useEffect(() => {
         fetchEntries()
@@ -28,18 +35,24 @@ export default function Timeline({ onEdit }: TimelineProps) {
             setEntries(data)
         } catch (err) {
             setError(err instanceof Error ? err.message : "An error occurred")
+            showToast('Failed to load timeline entries', 'error')
         } finally {
             setLoading(false)
         }
     }
 
-    async function handleDelete(id: string) {
-        if (!confirm("Are you sure you want to delete this entry?")) return
+    async function handleDeleteConfirm() {
+        if (!deleteModal.entryId) return
+
         try {
-            await timelineService.deleteEntry(id)
+            await timelineService.deleteEntry(deleteModal.entryId)
             await fetchEntries()
+            showToast('Entry deleted successfully', 'success')
         } catch (err) {
             console.error("delete error:", err)
+            showToast('Failed to delete entry', 'error')
+        } finally {
+            setDeleteModal({ isOpen: false })
         }
     }
 
@@ -67,7 +80,7 @@ export default function Timeline({ onEdit }: TimelineProps) {
                         index={index}
                         isAdmin={isAdmin}
                         onEdit={onEdit}
-                        onDelete={handleDelete}
+                        onDelete={() => setDeleteModal({ isOpen: true, entryId: entry._id.toString() })}
                         side={index % 2 === 0 ? "left" : "right"}
                         isFirst={index === 0}
                         isLast={index === entries.length - 1}
@@ -76,6 +89,14 @@ export default function Timeline({ onEdit }: TimelineProps) {
                     />
                 ))}
             </div>
+
+            <DeleteModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false })}
+                onConfirm={handleDeleteConfirm}
+                title="Delete Timeline Entry"
+                description="Are you sure you want to delete this timeline entry? This action cannot be undone and will remove all associated media."
+            />
         </div>
     )
 }

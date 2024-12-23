@@ -5,8 +5,9 @@ import { auth } from "@/lib/auth/config"
 import dbConnect from "@/lib/db/mongoose"
 import { TimelineEntryModel } from "@/lib/db/models/timelineEntry"
 import { Media } from "@/types/pit"
+import { Types } from "mongoose"
 
-const STORAGE_PATH = path.join(process.cwd(), "storage", "pit")
+const UPLOADS_DIR = path.join(process.cwd(), "uploads", "pit")
 
 export async function POST(req: Request) {
     const session = await auth()
@@ -25,36 +26,47 @@ export async function POST(req: Request) {
         return new NextResponse("No file uploaded", { status: 400 })
     }
 
+    // Ensure uploads directory exists
+    await mkdir(UPLOADS_DIR, { recursive: true })
+
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    const date = new Date()
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, "0")
+    // Sanitize filename and add timestamp
+    const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+    const filename = `${Date.now()}-${sanitizedFilename}`
+    const filepath = path.join(UPLOADS_DIR, filename)
 
-    const dir = path.join(STORAGE_PATH, String(year), month)
-    await mkdir(dir, { recursive: true })
-
-    const filename = `${Date.now()}-${file.name}`
-    const filepath = path.join(dir, filename)
-    await writeFile(filepath, buffer)
+    try {
+        await writeFile(filepath, buffer)
+    } catch (error) {
+        console.error('Error writing file:', error)
+        return new NextResponse("Failed to save file", { status: 500 })
+    }
 
     const entry = await TimelineEntryModel.findById(timelineEntryId)
     if (!entry) {
         return new NextResponse("Timeline entry not found", { status: 404 })
     }
 
-    const media = {
+    const mediaId = new Types.ObjectId()
+    const media: Media = {
+        _id: mediaId,
         type: "image",
-        url: `/storage/pit/${year}/${month}/${filename}`,
+        url: `/api/uploads/pit/${filename}`, // Updated URL path
         caption,
-        timelineEntryId
+        timelineEntryId: new Types.ObjectId(timelineEntryId),
+        createdAt: new Date()
     }
 
     entry.media.push(media)
     await entry.save()
 
-    return NextResponse.json(media)
+    return NextResponse.json({
+        ...media,
+        _id: mediaId.toString(),
+        timelineEntryId: timelineEntryId.toString()
+    })
 }
 
 export async function DELETE(req: Request) {
@@ -67,13 +79,26 @@ export async function DELETE(req: Request) {
 
     const { _id, timelineEntryId } = await req.json()
 
-    const entry = await TimelineEntryModel.findById(timelineEntryId)
-    if (!entry) {
-        return new NextResponse("Timeline entry not found", { status: 404 })
+    try {
+        const entry = await TimelineEntryModel.findById(timelineEntryId)
+        if (!entry) {
+            return new NextResponse("Timeline entry not found", { status: 404 })
+        }
+
+        // Find the media item to get its URL
+        const mediaItem = entry.media.find((m: Media) => m._id.toString() === _id)
+        if (!mediaItem) {
+            return new NextResponse("Media not found", { status: 404 })
+        }
+
+        // Remove the media from the database
+        entry.media = entry.media.filter((m: Media) => m._id.toString() !== _id)
+        await entry.save()
+
+        // Return success
+        return new NextResponse(null, { status: 200 })
+    } catch (error) {
+        console.error('Error deleting media:', error)
+        return new NextResponse("Failed to delete media", { status: 500 })
     }
-
-    entry.media = entry.media.filter((m: Media) => m._id.toString() !== _id)
-    await entry.save()
-
-    return new NextResponse(null, { status: 200 })
 }

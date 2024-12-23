@@ -1,6 +1,7 @@
 node_modules/
 .next/
 .idea/
+uploads/
 .DS_Store
 next-env.d.ts
 .env*

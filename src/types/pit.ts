@@ -8,6 +8,7 @@ export interface Media {
     caption?: string
     timelineEntryId: Types.ObjectId | string
     createdAt: Date
+    file?: File
 }
 
 export interface TimelineEntry {
