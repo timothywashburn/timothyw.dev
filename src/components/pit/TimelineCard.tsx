@@ -14,17 +14,18 @@ export default function TimelineCard({ children, side, onClick }: TimelineCardPr
     const isLeft = side === "left"
 
     return (
-        <div
-            className={`bg-white rounded-lg shadow p-6 transition-transform duration-200 hover:-translate-y-1 cursor-pointer
+        <motion.div
+            className={`bg-white rounded-lg shadow p-6 transition-all duration-200 hover:-translate-y-1 cursor-pointer
                 ${isLeft ? 'ml-auto mr-0' : 'ml-0 mr-auto'} max-w-lg`}
-    onClick={onClick}
-    >
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
->
-    {children}
-    </motion.div>
-    </div>
-)
+            onClick={onClick}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+                duration: 0.2,
+                ease: "easeOut"
+            }}
+        >
+            {children}
+        </motion.div>
+    )
 }

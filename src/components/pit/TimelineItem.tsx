@@ -110,7 +110,7 @@ function Content({ entry, isAdmin, onEdit, onDelete, isExpanded }: {
                 </motion.div>
             )}
 
-            <TimelineMedia media={entry.media || []} />
+            <TimelineMedia media={entry.media || []} isExpanded={isExpanded} />
 
             <div className="flex flex-wrap gap-2 mt-4">
                 {entry.tags?.map((tag) => (
