@@ -14,6 +14,7 @@ export default function Timeline({ onEdit }: TimelineProps) {
     const [entries, setEntries] = useState<TimelineEntry[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [expandedId, setExpandedId] = useState<string | null>(null)
     const pathname = usePathname()
     const isAdmin = pathname.startsWith("/admin")
 
@@ -42,6 +43,10 @@ export default function Timeline({ onEdit }: TimelineProps) {
         }
     }
 
+    const handleExpand = (id: string) => {
+        setExpandedId(expandedId === id ? null : id)
+    }
+
     if (loading) return (
         <div className="flex justify-center p-8">
             <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -66,6 +71,8 @@ export default function Timeline({ onEdit }: TimelineProps) {
                         side={index % 2 === 0 ? "left" : "right"}
                         isFirst={index === 0}
                         isLast={index === entries.length - 1}
+                        isExpanded={expandedId === entry._id.toString()}
+                        onExpand={handleExpand}
                     />
                 ))}
             </div>
