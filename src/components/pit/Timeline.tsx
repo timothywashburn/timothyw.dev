@@ -2,8 +2,13 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import { TimelineEntry } from "@/types/pit"
 import { usePathname } from "next/navigation"
+import {ObjectId} from "mongodb";
 
-export default function Timeline() {
+interface TimelineProps {
+    onEdit?: (entry: TimelineEntry) => void;
+}
+
+export default function Timeline({ onEdit }: TimelineProps) {
     const [entries, setEntries] = useState<TimelineEntry[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -27,17 +32,18 @@ export default function Timeline() {
         }
     }
 
-    async function handleDelete(entryId: string) {
+    async function handleDelete(id: string | ObjectId) {
         if (!confirm("Are you sure you want to delete this entry?")) return
 
         try {
-            const res = await fetch(`/api/pit/timeline/${entryId}`, {
-                method: "DELETE"
+            const res = await fetch("/api/pit/timeline", {
+                method: "DELETE",
+                body: JSON.stringify({ _id: id.toString() })
             })
             if (!res.ok) throw new Error("Failed to delete entry")
             await fetchEntries()
         } catch (err) {
-            console.error("Delete error:", err)
+            console.error("delete error:", err)
         }
     }
 
@@ -49,7 +55,7 @@ export default function Timeline() {
         <div className="max-w-4xl mx-auto p-4">
             <div className="space-y-8">
                 {entries.map((entry) => (
-                    <div key={entry._id} className="border rounded-lg p-6 bg-white dark:bg-gray-800">
+                    <div key={entry._id.toString()} className="border rounded-lg p-6 bg-white dark:bg-gray-800">
                         <div className="flex justify-between items-start mb-4">
                             <h2 className="text-xl font-bold">{entry.title}</h2>
                             <div className="flex items-center gap-4">
@@ -64,12 +70,14 @@ export default function Timeline() {
                                         >
                                             Delete
                                         </button>
-                                        <button
-                                            onClick={() => onEdit(entry)}
-                                            className="text-blue-500 hover:text-blue-700"
-                                        >
-                                            Edit
-                                        </button>
+                                        {onEdit && (
+                                            <button
+                                                onClick={() => onEdit(entry)}
+                                                className="text-blue-500 hover:text-blue-700"
+                                            >
+                                                Edit
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -80,7 +88,7 @@ export default function Timeline() {
                         {entry.media?.length > 0 && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                 {entry.media.map((media) => (
-                                    <div key={media._id} className="relative">
+                                    <div key={media._id.toString()} className="relative">
                                         {media.type === "image" ? (
                                             <Image
                                                 src={media.url}
@@ -113,8 +121,8 @@ export default function Timeline() {
                                         key={tag}
                                         className="px-2 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded-full"
                                     >
-                    {tag}
-                  </span>
+                                        {tag}
+                                    </span>
                                 ))}
                             </div>
                         )}

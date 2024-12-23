@@ -1,5 +1,7 @@
+import { ObjectId } from "mongodb"
+
 export interface TimelineEntry {
-    _id: string
+    _id: string | ObjectId
     date: Date
     title: string
     description: string
@@ -10,12 +12,13 @@ export interface TimelineEntry {
 }
 
 export interface Media {
-    _id: string
+    _id: string | ObjectId
     type: "image" | "youtube"
     url: string
     thumbnail?: string
     caption?: string
     timelineEntryId: string
+    createdAt: Date
 }
 
 export interface TimelineFilter {

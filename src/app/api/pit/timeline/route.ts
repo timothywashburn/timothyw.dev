@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth/config"
 import { getTimelineCollection } from "@/lib/db/mongodb"
 import { TimelineEntry } from "@/types/pit"
+import { ObjectId } from "mongodb"
 
 export async function GET(req: Request) {
     const searchParams = new URL(req.url).searchParams
@@ -34,13 +35,16 @@ export async function POST(req: Request) {
     const entry: Omit<TimelineEntry, "_id" | "createdAt" | "updatedAt"> = await req.json()
     const collection = await getTimelineCollection()
 
-    const result = await collection.insertOne({
+    const newEntry = {
         ...entry,
+        _id: new ObjectId(),
         createdAt: new Date(),
         updatedAt: new Date()
-    })
+    }
 
-    return NextResponse.json({ _id: result.insertedId })
+    const result = await collection.insertOne(newEntry)
+
+    return NextResponse.json({ _id: result.insertedId.toString() })
 }
 
 export async function PUT(req: Request) {
@@ -52,11 +56,13 @@ export async function PUT(req: Request) {
     const entry: TimelineEntry = await req.json()
     const collection = await getTimelineCollection()
 
+    const { _id, ...updateData } = entry
+
     await collection.updateOne(
-        { _id: entry._id },
+        { _id: new ObjectId(_id) },
         {
             $set: {
-                ...entry,
+                ...updateData,
                 updatedAt: new Date()
             }
         }
@@ -74,7 +80,7 @@ export async function DELETE(req: Request) {
     const { _id } = await req.json()
     const collection = await getTimelineCollection()
 
-    await collection.deleteOne({ _id })
+    await collection.deleteOne({ _id: new ObjectId(_id) })
 
     return new NextResponse(null, { status: 200 })
 }

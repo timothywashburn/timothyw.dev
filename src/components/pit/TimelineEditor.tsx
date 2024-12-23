@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { TimelineEntry, Media } from "@/types/pit"
+import { ObjectId } from "mongodb"
 
 interface Props {
     entry?: TimelineEntry
@@ -19,7 +20,7 @@ export default function TimelineEditor({ entry, onSave, onCancel }: Props) {
         e.preventDefault()
 
         const formData = {
-            _id: entry?._id,
+            _id: entry?._id || new ObjectId(),
             title,
             date: new Date(date),
             description,
@@ -39,7 +40,7 @@ export default function TimelineEditor({ entry, onSave, onCancel }: Props) {
         const file = e.target.files[0]
         const formData = new FormData()
         formData.append("file", file)
-        formData.append("timelineEntryId", entry?._id || "temp")
+        formData.append("timelineEntryId", entry?._id?.toString() || "temp")
 
         try {
             const res = await fetch("/api/pit/media", {
@@ -58,13 +59,13 @@ export default function TimelineEditor({ entry, onSave, onCancel }: Props) {
         }
     }
 
-    async function handleMediaDelete(mediaId: string) {
+    async function handleMediaDelete(mediaId: string | ObjectId) {
         try {
             await fetch("/api/pit/media", {
                 method: "DELETE",
-                body: JSON.stringify({ _id: mediaId })
+                body: JSON.stringify({ _id: mediaId.toString() })
             })
-            setMedia(media.filter(m => m._id !== mediaId))
+            setMedia(media.filter(m => m._id.toString() !== mediaId.toString()))
         } catch (error) {
             console.error("Delete error:", error)
         }
@@ -127,7 +128,7 @@ export default function TimelineEditor({ entry, onSave, onCancel }: Props) {
 
                 <div className="grid grid-cols-2 gap-4">
                     {media.map(item => (
-                        <div key={item._id} className="relative">
+                        <div key={item._id.toString()} className="relative">
                             <img
                                 src={item.url}
                                 alt={item.caption || ""}

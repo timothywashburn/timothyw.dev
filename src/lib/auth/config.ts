@@ -1,4 +1,3 @@
-import NextAuth from "next-auth"
 import type { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import { env } from "@/env"
@@ -24,4 +23,4 @@ export const authOptions: NextAuthOptions = {
     }
 }
 
-export const auth = () => getServerSession(authOptions)
+export const auth = () => getServerSession(authOptions);
