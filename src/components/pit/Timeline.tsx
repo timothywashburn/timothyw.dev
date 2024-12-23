@@ -7,7 +7,7 @@ import { timelineService } from "@/lib/services/timelineService"
 import TimelineItem from "./TimelineItem"
 
 interface TimelineProps {
-    onEdit?: (entry: TimelineEntry) => void;
+    onEdit?: (entry: TimelineEntry) => void
 }
 
 export default function Timeline({ onEdit }: TimelineProps) {
@@ -48,31 +48,26 @@ export default function Timeline({ onEdit }: TimelineProps) {
         </div>
     )
 
-    if (error) return (
-        <div className="text-red-500 p-4 text-center">Error: {error}</div>
-    )
+    if (error) return <div className="text-red-500 p-4 text-center">Error: {error}</div>
 
-    if (!entries.length) return (
-        <div className="text-gray-500 p-4 text-center">No entries found</div>
-    )
+    if (!entries.length) return <div className="text-gray-500 p-4 text-center">No entries found</div>
 
     return (
         <div className="max-w-6xl mx-auto px-4 py-8">
             <div className="relative">
-                <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-blue-500" />
-                <div className="relative">
-                    {entries.map((entry, index) => (
-                        <TimelineItem
-                            key={entry._id.toString()}
-                            entry={entry}
-                            index={index}
-                            isAdmin={isAdmin}
-                            onEdit={onEdit}
-                            onDelete={handleDelete}
-                            side={index % 2 === 0 ? "left" : "right"}
-                        />
-                    ))}
-                </div>
+                {entries.map((entry, index) => (
+                    <TimelineItem
+                        key={entry._id.toString()}
+                        entry={entry}
+                        index={index}
+                        isAdmin={isAdmin}
+                        onEdit={onEdit}
+                        onDelete={handleDelete}
+                        side={index % 2 === 0 ? "left" : "right"}
+                        isFirst={index === 0}
+                        isLast={index === entries.length - 1}
+                    />
+                ))}
             </div>
         </div>
     )
