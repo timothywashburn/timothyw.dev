@@ -8,14 +8,24 @@ export const authOptions: NextAuthOptions = {
         GoogleProvider({
             clientId: env.GOOGLE_CLIENT_ID,
             clientSecret: env.GOOGLE_CLIENT_SECRET,
+            authorization: {
+                params: {
+                    prompt: "select_account",
+                    access_type: "offline",
+                }
+            }
         })
     ],
     pages: {
-        signIn: "/auth/signin"
+        signIn: "/auth/signin",
+        error: "/auth/error"
     },
     callbacks: {
         async signIn({ account, profile }) {
-            return profile?.email === "timothyrwashburn@gmail.com"
+            if (profile?.email !== "timothyrwashburn@gmail.com") {
+                throw new Error("Unauthorized email")
+            }
+            return true
         },
         async session({ session, token }) {
             return session
