@@ -32,13 +32,13 @@ export default function Timeline({ onEdit }: TimelineProps) {
         }
     }
 
-    async function handleDelete(id: string | ObjectId) {
+    async function handleDelete(id: string) {
         if (!confirm("Are you sure you want to delete this entry?")) return
 
         try {
             const res = await fetch("/api/pit/timeline", {
                 method: "DELETE",
-                body: JSON.stringify({ _id: id.toString() })
+                body: JSON.stringify({ _id: id })
             })
             if (!res.ok) throw new Error("Failed to delete entry")
             await fetchEntries()

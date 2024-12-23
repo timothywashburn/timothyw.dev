@@ -2,9 +2,8 @@ import { NextResponse } from "next/server"
 import { writeFile, mkdir } from "fs/promises"
 import path from "path"
 import { auth } from "@/lib/auth/config"
-import { getMediaCollection } from "@/lib/db/mongodb"
-import type { Media } from "@/types/pit"
-import { ObjectId } from "mongodb"
+import dbConnect from "@/lib/db/mongoose"
+import { MediaModel } from "@/lib/db/models/media"
 
 const STORAGE_PATH = path.join(process.cwd(), "storage", "pit")
 
@@ -13,6 +12,8 @@ export async function POST(req: Request) {
     if (!session) {
         return new NextResponse("Unauthorized", { status: 401 })
     }
+
+    await dbConnect()
 
     const formData = await req.formData()
     const file = formData.get("file") as File
@@ -37,23 +38,14 @@ export async function POST(req: Request) {
     const filepath = path.join(dir, filename)
     await writeFile(filepath, buffer)
 
-    const collection = await getMediaCollection()
-
-    const media: Omit<Media, '_id'> & { _id: ObjectId } = {
-        _id: new ObjectId(),
+    const media = await MediaModel.create({
         type: "image",
         url: `/storage/pit/${year}/${month}/${filename}`,
         caption,
-        timelineEntryId,
-        createdAt: date
-    }
-
-    const result = await collection.insertOne(media)
-
-    return NextResponse.json({
-        ...media,
-        _id: result.insertedId.toString()
+        timelineEntryId
     })
+
+    return NextResponse.json(media)
 }
 
 export async function DELETE(req: Request) {
@@ -62,10 +54,8 @@ export async function DELETE(req: Request) {
         return new NextResponse("Unauthorized", { status: 401 })
     }
 
+    await dbConnect()
     const { _id } = await req.json()
-    const collection = await getMediaCollection()
-
-    await collection.deleteOne({ _id: new ObjectId(_id) })
-
+    await MediaModel.findByIdAndDelete(_id)
     return new NextResponse(null, { status: 200 })
 }

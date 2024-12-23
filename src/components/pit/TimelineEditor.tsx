@@ -20,7 +20,7 @@ export default function TimelineEditor({ entry, onSave, onCancel }: Props) {
         e.preventDefault()
 
         const formData = {
-            _id: entry?._id || new ObjectId(),
+            _id: entry?._id || "",
             title,
             date: new Date(date),
             description,

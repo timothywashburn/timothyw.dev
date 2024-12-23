@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth/config"
-import { getTimelineCollection } from "@/lib/db/mongodb"
-import { TimelineEntry } from "@/types/pit"
-import { ObjectId } from "mongodb"
+import dbConnect from "@/lib/db/mongoose"
+import { TimelineModel } from "@/lib/db/models/timeline"
 
 export async function GET(req: Request) {
+    await dbConnect()
+
     const searchParams = new URL(req.url).searchParams
     const startDate = searchParams.get("startDate")
     const endDate = searchParams.get("endDate")
@@ -17,12 +18,7 @@ export async function GET(req: Request) {
     if (tags?.length) query.tags = { $in: tags }
     if (search) query.$text = { $search: search }
 
-    const collection = await getTimelineCollection()
-    const entries = await collection
-        .find(query)
-        .sort({ date: -1 })
-        .toArray()
-
+    const entries = await TimelineModel.find(query).sort({ date: -1 })
     return NextResponse.json(entries)
 }
 
@@ -32,19 +28,10 @@ export async function POST(req: Request) {
         return new NextResponse("Unauthorized", { status: 401 })
     }
 
-    const entry: Omit<TimelineEntry, "_id" | "createdAt" | "updatedAt"> = await req.json()
-    const collection = await getTimelineCollection()
-
-    const newEntry = {
-        ...entry,
-        _id: new ObjectId(),
-        createdAt: new Date(),
-        updatedAt: new Date()
-    }
-
-    const result = await collection.insertOne(newEntry)
-
-    return NextResponse.json({ _id: result.insertedId.toString() })
+    await dbConnect()
+    const data = await req.json()
+    const entry = await TimelineModel.create(data)
+    return NextResponse.json({ _id: entry._id.toString() })
 }
 
 export async function PUT(req: Request) {
@@ -53,21 +40,9 @@ export async function PUT(req: Request) {
         return new NextResponse("Unauthorized", { status: 401 })
     }
 
-    const entry: TimelineEntry = await req.json()
-    const collection = await getTimelineCollection()
-
-    const { _id, ...updateData } = entry
-
-    await collection.updateOne(
-        { _id: new ObjectId(_id) },
-        {
-            $set: {
-                ...updateData,
-                updatedAt: new Date()
-            }
-        }
-    )
-
+    await dbConnect()
+    const { _id, ...updateData } = await req.json()
+    await TimelineModel.findByIdAndUpdate(_id, updateData)
     return new NextResponse(null, { status: 200 })
 }
 
@@ -77,10 +52,8 @@ export async function DELETE(req: Request) {
         return new NextResponse("Unauthorized", { status: 401 })
     }
 
+    await dbConnect()
     const { _id } = await req.json()
-    const collection = await getTimelineCollection()
-
-    await collection.deleteOne({ _id: new ObjectId(_id) })
-
+    await TimelineModel.findByIdAndDelete(_id)
     return new NextResponse(null, { status: 200 })
 }
