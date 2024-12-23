@@ -17,7 +17,7 @@ const timelineEntrySchema = new mongoose.Schema({
     media: [{
         type: {
             type: String,
-            enum: ['image', 'youtube'],
+            enum: ['image'],
             required: true
         },
         url: {

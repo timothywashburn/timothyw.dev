@@ -2,7 +2,7 @@ import { Types } from 'mongoose'
 
 export interface Media {
     _id: Types.ObjectId | string
-    type: 'image' | 'youtube'
+    type: 'image'
     url: string
     thumbnail?: string
     caption?: string
