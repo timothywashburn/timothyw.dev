@@ -7,7 +7,7 @@ export async function GET(
     { params }: { params: { path: string[] } }
 ) {
     const pathSegments = params.path
-    const filepath = path.join(process.cwd(), "uploads", ...pathSegments)
+    const filepath = path.join(process.cwd(), "storage", "uploads", ...pathSegments)
 
     try {
         const file = await readFile(filepath)

@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     const media: Media = {
         _id: mediaId,
         type: "image",
-        url: `/api/uploads/pit/${filename}`, // Updated URL path
+        url: UPLOADS_DIR + `/${filename}`,
         caption,
         timelineEntryId: new Types.ObjectId(timelineEntryId),
         createdAt: new Date()
