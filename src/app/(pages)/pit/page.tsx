@@ -9,10 +9,10 @@ export default function PitPage() {
                     <div className="h-16 flex items-center">
                         <div>
                             <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-                                Pit Journey Timeline
+                                pit + sim timeline
                             </h1>
                             <p className="text-sm font-medium text-gray-500">
-                                A chronicle of my adventures and achievements in Hypixel's Pit
+                                things I did related to the hypixel pit
                             </p>
                         </div>
                     </div>

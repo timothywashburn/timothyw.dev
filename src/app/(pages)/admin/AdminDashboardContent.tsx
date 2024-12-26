@@ -10,8 +10,8 @@ import { motion } from "framer-motion"
 
 const adminModules = [
     {
-        title: "Pit Timeline",
-        description: "Manage timeline entries for your Pit journey",
+        title: "Pit Timeline Manager",
+        description: "Manage Pit timeline entries",
         icon: Clock,
         href: "/admin/pit",
         color: "bg-blue-500"
@@ -30,10 +30,10 @@ export default function AdminDashboardContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-gray-900">
-                    Welcome to the Admin Dashboard
+                    Admin Modules
                 </h1>
                 <p className="mt-1 text-sm text-gray-500">
-                    Select a module below to get started
+                    Select from below or use the navigation bar
                 </p>
             </div>
 
@@ -66,13 +66,6 @@ export default function AdminDashboardContent() {
                         </Link>
                     </motion.div>
                 ))}
-            </div>
-
-            <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-                <h2 className="text-sm font-medium text-blue-800">Quick Tip</h2>
-                <p className="mt-1 text-sm text-blue-600">
-                    Use the navigation bar above to quickly switch between different admin modules.
-                </p>
             </div>
         </div>
     )
