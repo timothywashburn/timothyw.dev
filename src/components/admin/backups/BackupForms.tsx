@@ -11,25 +11,27 @@ interface BackupNameInputProps {
 
 function BackupNameInput({ value, onChange, onValidityChange }: BackupNameInputProps) {
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const newValue = e.target.value;
         onChange(e);
-        const isValid = e.target.value.length > 0 &&
-            e.target.value.length <= MAX_LENGTH &&
-            BACKUP_NAME_REGEX.test(e.target.value);
+
+        const isValid = newValue.length > 0 &&
+            newValue.length <= MAX_LENGTH &&
+            BACKUP_NAME_REGEX.test(newValue);
         onValidityChange(isValid);
     };
 
     return (
         <div>
-            <label className="block text-sm font-medium mb-2">
+            <label htmlFor="backupName" className="block text-sm font-medium mb-2">
                 Backup Name
             </label>
             <input
+                id="backupName"
                 type="text"
                 value={value}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border rounded-md"
                 required
-                pattern="[a-zA-Z0-9_-]+"
                 maxLength={MAX_LENGTH}
                 title="Name can only contain letters, numbers, underscores, and hyphens"
             />
