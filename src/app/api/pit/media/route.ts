@@ -7,7 +7,7 @@ import { TimelineEntryModel } from "@/lib/db/models/timelineEntry"
 import { Media } from "@/types/pit"
 import { Types } from "mongoose"
 
-const UPLOADS_DIR = path.join(process.cwd(), "uploads", "pit")
+const UPLOADS_DIR = path.join(process.cwd(), "storage", "uploads", "pit")
 
 export async function POST(req: Request) {
     const session = await auth()

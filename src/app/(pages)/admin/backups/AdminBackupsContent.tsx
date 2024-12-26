@@ -1,11 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Trash2, RefreshCw, Pencil } from "lucide-react"
 import { useToast } from "@/components/ui/Toast"
 import { BackupMetadata } from "@/lib/services/backupService"
 import FormModal from "@/components/ui/modal/FormModal"
 import DeleteModal from "@/components/ui/modal/DeleteModal"
+import BackupsHeader from "@/app/(pages)/admin/backups/BackupsHeader";
+import BackupListItem from "@/app/(pages)/admin/backups/BackupListItem";
+import RestoreModal from "@/app/(pages)/admin/backups/RestoreModal";
 
 export default function AdminBackupsContent() {
     const [backups, setBackups] = useState<BackupMetadata[]>([])
@@ -13,6 +15,7 @@ export default function AdminBackupsContent() {
     const [createModal, setCreateModal] = useState(false)
     const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, backup?: BackupMetadata}>({ isOpen: false })
     const [renameModal, setRenameModal] = useState<{isOpen: boolean, backup?: BackupMetadata}>({ isOpen: false })
+    const [restoreModal, setRestoreModal] = useState<{isOpen: boolean, backup?: BackupMetadata}>({ isOpen: false })
     const [newBackupName, setNewBackupName] = useState("")
     const [newName, setNewName] = useState("")
     const { showToast } = useToast()
@@ -55,24 +58,22 @@ export default function AdminBackupsContent() {
         setNewBackupName("")
     }
 
-    async function handleRestoreBackup(backup: BackupMetadata) {
-        const confirmed = window.confirm(
-            "Are you sure you want to restore this backup? This will overwrite all current data."
-        )
-
-        if (!confirmed) return
+    async function handleRestoreBackup() {
+        if (!restoreModal.backup) return
 
         try {
             const response = await fetch("/api/admin/backups", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "restore", name: backup.name }),
+                body: JSON.stringify({ action: "restore", name: restoreModal.backup.name }),
             })
 
             if (!response.ok) throw new Error("Failed to restore backup")
             showToast("Backup restored successfully", "success")
         } catch (error) {
             showToast("Failed to restore backup", "error")
+        } finally {
+            setRestoreModal({ isOpen: false })
         }
     }
 
@@ -132,65 +133,19 @@ export default function AdminBackupsContent() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="h-16 flex items-center justify-between">
-                        <div>
-                            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-                                Database Backups
-                            </h1>
-                            <p className="text-sm text-gray-500">
-                                Manage MongoDB backups
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => setCreateModal(true)}
-                            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 gap-2"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Create Backup
-                        </button>
-                    </div>
-                </div>
-            </header>
+            <BackupsHeader onCreateClick={() => setCreateModal(true)} />
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="bg-white rounded-lg shadow">
                     <div className="divide-y">
                         {backups.map((backup) => (
-                            <div
+                            <BackupListItem
                                 key={backup.name}
-                                className="p-4 flex items-center justify-between"
-                            >
-                                <div>
-                                    <h3 className="font-medium">{backup.name}</h3>
-                                    <p className="text-sm text-gray-500">
-                                        Created: {new Date(backup.createdAt).toLocaleString()}
-                                        {" · "}
-                                        Size: {(backup.size / 1024 / 1024).toFixed(2)} MB
-                                    </p>
-                                </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => setRenameModal({ isOpen: true, backup })}
-                                        className="p-2 text-gray-500 hover:text-gray-700"
-                                    >
-                                        <Pencil className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => handleRestoreBackup(backup)}
-                                        className="p-2 text-blue-500 hover:text-blue-700"
-                                    >
-                                        <RefreshCw className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => setDeleteModal({ isOpen: true, backup })}
-                                        className="p-2 text-red-500 hover:text-red-700"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
+                                backup={backup}
+                                onRename={(backup) => setRenameModal({ isOpen: true, backup })}
+                                onRestore={(backup) => setRestoreModal({ isOpen: true, backup })}
+                                onDelete={(backup) => setDeleteModal({ isOpen: true, backup })}
+                            />
                         ))}
                         {backups.length === 0 && (
                             <p className="p-4 text-center text-gray-500">
@@ -244,6 +199,13 @@ export default function AdminBackupsContent() {
                     </div>
                 </form>
             </FormModal>
+
+            <RestoreModal
+                isOpen={restoreModal.isOpen}
+                onClose={() => setRestoreModal({ isOpen: false })}
+                onConfirm={handleRestoreBackup}
+                backup={restoreModal.backup}
+            />
 
             <DeleteModal
                 isOpen={deleteModal.isOpen}
