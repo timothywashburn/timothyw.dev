@@ -197,15 +197,29 @@ export class BackupService {
             throw new BackupError('A backup with the new name already exists', 'DUPLICATE_NAME');
         }
 
+        const metadata = await this.loadMetadata(oldName);
+        if (!metadata) {
+            throw new BackupError('Backup metadata not found', 'METADATA_NOT_FOUND');
+        }
+
         const oldPath = path.join(this.backupDir, `${oldName}.gz`);
         const newPath = path.join(this.backupDir, `${newName}.gz`);
         const oldMetaPath = path.join(this.backupDir, `${oldName}.meta.json`);
         const newMetaPath = path.join(this.backupDir, `${newName}.meta.json`);
 
-        await Promise.all([
-            fs.rename(oldPath, newPath),
-            fs.rename(oldMetaPath, newMetaPath).catch(() => {})
-        ]);
+        try {
+            const updatedMetadata: BackupMetadata = {
+                ...metadata,
+                name: newName
+            };
+
+            await this.saveMetadata(newName, updatedMetadata);
+            await fs.rename(oldPath, newPath);
+            await fs.unlink(oldMetaPath).catch(() => {});
+        } catch (error) {
+            console.error('failed to rename backup:', error);
+            throw new BackupError('Failed to rename backup', 'RENAME_FAILED');
+        }
     }
 }
 
