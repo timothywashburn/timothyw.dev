@@ -1,18 +1,21 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect } from "react"
-import { useToast } from "@/components/ui/Toast"
-import { BackupMetadata } from "@/lib/services/backupService"
-import FormModal from "@/components/ui/modal/FormModal"
-import DeleteModal from "@/components/ui/modal/DeleteModal"
+import React, { useState } from "react";
+import { useToast } from "@/components/ui/Toast";
+import { BackupMetadata } from "@/lib/services/backupService";
+import FormModal from "@/components/ui/modal/FormModal";
+import DeleteModal from "@/components/ui/modal/DeleteModal";
 import BackupListItem from "@/components/admin/backups/BackupListItem";
 import BackupsHeader from "@/components/admin/backups/BackupsHeader";
 import RestoreModal from "@/components/admin/backups/RestoreModal";
-import {CreateBackupForm, RenameBackupForm} from "@/components/admin/backups/BackupForms";
+import { CreateBackupForm, RenameBackupForm } from "@/components/admin/backups/BackupForms";
 
-export default function AdminBackupsContent() {
-    const [backups, setBackups] = useState<BackupMetadata[]>([]);
-    const [loading, setLoading] = useState(true);
+interface AdminBackupsContentProps {
+    initialBackups: BackupMetadata[];
+}
+
+export default function AdminBackupsContent({ initialBackups }: AdminBackupsContentProps) {
+    const [backups, setBackups] = useState<BackupMetadata[]>(initialBackups);
     const [createModal, setCreateModal] = useState(false);
     const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, backup?: BackupMetadata}>({ isOpen: false });
     const [renameModal, setRenameModal] = useState<{isOpen: boolean, backup?: BackupMetadata}>({ isOpen: false });
@@ -23,20 +26,14 @@ export default function AdminBackupsContent() {
     const [isValidRename, setIsValidRename] = useState(false);
     const { showToast } = useToast();
 
-    useEffect(() => {
-        fetchBackups();
-    }, []);
-
-    async function fetchBackups() {
+    async function refreshBackups() {
         try {
             const response = await fetch("/api/admin/backups");
             if (!response.ok) throw new Error("Failed to fetch backups");
             const data = await response.json();
             setBackups(data);
         } catch (error) {
-            showToast("Failed to load backups", "error");
-        } finally {
-            setLoading(false);
+            showToast("Failed to refresh backups", "error");
         }
     }
 
@@ -60,7 +57,7 @@ export default function AdminBackupsContent() {
             }
 
             showToast("Backup created successfully", "success");
-            await fetchBackups();
+            await refreshBackups();
         } catch (error) {
             showToast("Failed to create backup", "error");
             setNewBackupName("");
@@ -112,7 +109,7 @@ export default function AdminBackupsContent() {
             }
 
             showToast("Backup deleted successfully", "success");
-            await fetchBackups();
+            await refreshBackups();
         } catch (error) {
             showToast("Failed to delete backup", "error");
         }
@@ -144,7 +141,7 @@ export default function AdminBackupsContent() {
             }
 
             showToast("Backup renamed successfully", "success");
-            await fetchBackups();
+            await refreshBackups();
         } catch (error) {
             showToast("Failed to rename backup", "error");
             setNewName("");
@@ -167,14 +164,6 @@ export default function AdminBackupsContent() {
         setNewName("");
         setIsValidRename(false);
     };
-
-    if (loading) {
-        return (
-            <div className="flex justify-center p-8">
-                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-gray-50">

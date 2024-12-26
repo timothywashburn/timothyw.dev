@@ -1,7 +1,7 @@
-import { auth } from "@/lib/auth/config"
-import { redirect } from "next/navigation"
+import { backupService } from "@/lib/services/backupService"
 import AdminBackupsContent from "./AdminBackupsContent"
 
 export default async function AdminBackupsPage() {
-    return <AdminBackupsContent />
+    const backups = await backupService.listBackups();
+    return <AdminBackupsContent initialBackups={backups} />
 }

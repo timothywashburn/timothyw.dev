@@ -3,7 +3,7 @@
 import Timeline from "@/components/pit/Timeline"
 import TimelineEditor from "@/components/pit/TimelineEditor"
 import TimelineHeader from "@/components/admin/pit/TimelineHeader"
-import { useState } from "react"
+import { useState, FormEvent } from "react"
 import { TimelineEntry } from "@/types/pit"
 import FormModal from "@/components/ui/modal/FormModal"
 
@@ -28,6 +28,10 @@ export default function AdminPitContent() {
         setEditingEntry(undefined)
     }
 
+    const handleSubmit = (e: FormEvent) => {
+        e.preventDefault()
+    }
+
     return (
         <div className="min-h-screen bg-gray-50">
             <TimelineHeader onAddEntry={() => setIsModalOpen(true)} />
@@ -39,6 +43,7 @@ export default function AdminPitContent() {
             <FormModal
                 isOpen={isModalOpen}
                 onClose={handleClose}
+                onSubmit={handleSubmit}
                 title={editingEntry ? "Edit Entry" : "Add New Entry"}
                 description={editingEntry
                     ? "Make changes to your timeline entry below"

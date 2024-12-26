@@ -29,7 +29,7 @@ export default function FormModal({
 }: FormModalProps) {
     return (
         <BaseModal isOpen={isOpen} onClose={onClose} title={title} description={description} icon={Icon}>
-            <form onSubmit={onSubmit}>
+            <div className="space-y-6">
                 {children}
 
                 <div className="mt-6 border-t border-gray-100 pt-6 flex justify-end space-x-3">
@@ -46,6 +46,7 @@ export default function FormModal({
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         type="submit"
+                        form="modal-form"
                         disabled={!isValid}
                         className={`px-4 py-2 text-white rounded-lg transition-colors ${
                             isValid ? 'bg-blue-500 hover:bg-blue-600' : 'bg-blue-300 cursor-not-allowed'
@@ -54,7 +55,7 @@ export default function FormModal({
                         {submitText}
                     </motion.button>
                 </div>
-            </form>
+            </div>
         </BaseModal>
     );
 }
