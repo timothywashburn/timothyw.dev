@@ -6,26 +6,27 @@ interface BackupsHeaderProps {
 
 export default function BackupsHeader({ onCreateClick }: BackupsHeaderProps) {
     return (
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-gray-900">
                             Database Backups
                         </h1>
-                        <p className="text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-gray-500">
                             Manage MongoDB backups
                         </p>
                     </div>
                     <button
                         onClick={onCreateClick}
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 gap-2"
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700
+                                 text-white font-medium rounded-lg transition-colors gap-2"
                     >
                         <Plus className="w-4 h-4" />
                         Create Backup
                     </button>
                 </div>
             </div>
-        </header>
+        </div>
     )
 }

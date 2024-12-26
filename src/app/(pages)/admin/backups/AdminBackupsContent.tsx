@@ -5,9 +5,9 @@ import { useToast } from "@/components/ui/Toast"
 import { BackupMetadata } from "@/lib/services/backupService"
 import FormModal from "@/components/ui/modal/FormModal"
 import DeleteModal from "@/components/ui/modal/DeleteModal"
-import BackupsHeader from "@/app/(pages)/admin/backups/BackupsHeader";
-import BackupListItem from "@/app/(pages)/admin/backups/BackupListItem";
-import RestoreModal from "@/app/(pages)/admin/backups/RestoreModal";
+import BackupListItem from "@/components/admin/backups/BackupListItem";
+import BackupsHeader from "@/components/admin/backups/BackupsHeader";
+import RestoreModal from "@/components/admin/backups/RestoreModal";
 
 export default function AdminBackupsContent() {
     const [backups, setBackups] = useState<BackupMetadata[]>([])

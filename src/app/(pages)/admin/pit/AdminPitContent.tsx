@@ -2,10 +2,10 @@
 
 import Timeline from "@/components/pit/Timeline"
 import TimelineEditor from "@/components/pit/TimelineEditor"
-import { Plus } from "lucide-react"
+import TimelineHeader from "@/components/admin/pit/TimelineHeader"
 import { useState } from "react"
 import { TimelineEntry } from "@/types/pit"
-import FormModal from "@/components/ui/modal/FormModal";
+import FormModal from "@/components/ui/modal/FormModal"
 
 export default function AdminPitContent() {
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -30,32 +30,8 @@ export default function AdminPitContent() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Modern Header */}
-            <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200 supports-[backdrop-filter]:bg-white/60">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="h-16 flex items-center justify-between gap-4">
-                        <div className="flex-1">
-                            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-                                Pit Timeline Admin
-                            </h1>
-                            <p className="text-sm font-medium text-gray-500">
-                                Manage and edit timeline entries
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700
-                                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                                     text-white font-medium rounded-lg transition-colors gap-2 shadow-sm"
-                        >
-                            <Plus className="w-4 h-4" />
-                            <span>Add Entry</span>
-                        </button>
-                    </div>
-                </div>
-            </header>
+            <TimelineHeader onAddEntry={() => setIsModalOpen(true)} />
 
-            {/* Content */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <Timeline key={key} onEdit={handleEdit} />
             </div>
