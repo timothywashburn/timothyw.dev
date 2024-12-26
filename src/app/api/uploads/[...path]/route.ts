@@ -6,7 +6,7 @@ export async function GET(
     request: Request,
     { params }: { params: { path: string[] } }
 ) {
-    const pathSegments = await Promise.resolve(params.path)
+    const pathSegments = params.path
     const filepath = path.join(process.cwd(), "uploads", ...pathSegments)
 
     try {
