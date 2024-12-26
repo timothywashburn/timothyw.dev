@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TimelineEntry, Media } from "@/types/pit";
 import { timelineService } from "@/lib/services/timelineService";
 import MediaManager from "./TimelineMediaManager";
@@ -22,18 +22,68 @@ export default function TimelineEditor({
     onSaveComplete
 }: TimelineEditorProps) {
     const { showToast } = useToast();
-    const [title, setTitle] = useState(entry?.title || "");
-    const [date, setDate] = useState(entry?.date ? new Date(entry.date).toISOString().split("T")[0] : "");
-    const [description, setDescription] = useState(entry?.description || "");
-    const [tags, setTags] = useState(entry?.tags?.join(", ") || "");
-    const [media, setMedia] = useState<Media[]>(entry?.media || []);
+    const [title, setTitle] = useState("");
+    const [date, setDate] = useState("");
+    const [description, setDescription] = useState("");
+    const [tags, setTags] = useState("");
+    const [media, setMedia] = useState<Media[]>([]);
+    const [deletedMediaIds, setDeletedMediaIds] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            setTitle(entry?.title || "");
+            setDate(entry?.date ? new Date(entry.date).toISOString().split("T")[0] : "");
+            setDescription(entry?.description || "");
+            setTags(entry?.tags?.join(", ") || "");
+            setMedia(entry?.media || []);
+            setDeletedMediaIds([]); // Reset deleted media tracking when modal opens
+        } else {
+            setTitle("");
+            setDate("");
+            setDescription("");
+            setTags("");
+            setMedia([]);
+            setDeletedMediaIds([]);
+        }
+    }, [isOpen, entry]);
+
+    const handleMediaChange = (newMedia: Media[]) => {
+        // Track deleted media IDs that aren't temporary (don't start with 'temp-')
+        const deletedMedia = media.filter(m =>
+            !newMedia.some(nm => nm._id === m._id) &&
+            !m._id.toString().startsWith('temp-')
+        );
+
+        const newDeletedIds = deletedMedia.map(m => m._id.toString());
+        setDeletedMediaIds(prev => [...prev, ...newDeletedIds]);
+        setMedia(newMedia);
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
 
         try {
+            // Handle media deletions
+            for (const mediaId of deletedMediaIds) {
+                const response = await fetch("/api/pit/media", {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        _id: mediaId,
+                        timelineEntryId: entry?._id,
+                    }),
+                });
+
+                if (!response.ok) {
+                    console.error("failed to delete media:", mediaId);
+                }
+            }
+
+            // Handle media uploads
             const processedMedia = await Promise.all(
                 media.map(async (item) => {
                     if (item._id.toString().startsWith('temp-') && item.file) {
@@ -51,7 +101,8 @@ export default function TimelineEditor({
                             throw new Error("Failed to upload media");
                         }
 
-                        return await response.json();
+                        const uploadedMedia = await response.json();
+                        return uploadedMedia;
                     }
                     return item;
                 })
@@ -70,7 +121,7 @@ export default function TimelineEditor({
                 await timelineService.updateEntry({ ...entryData, _id: entry._id } as TimelineEntry);
                 showToast('Entry updated successfully', 'success');
             } else {
-                const id = await timelineService.createEntry(entryData);
+                await timelineService.createEntry(entryData);
                 showToast('Entry created successfully', 'success');
             }
 
@@ -83,10 +134,14 @@ export default function TimelineEditor({
         }
     };
 
+    const handleClose = () => {
+        onClose();
+    };
+
     return (
         <BaseModal
             isOpen={isOpen}
-            onClose={onClose}
+            onClose={handleClose}
             title={entry ? "Edit Entry" : "Add New Entry"}
             description={entry ? "Make changes to your timeline entry" : "Create a new timeline entry"}
         >
@@ -133,19 +188,17 @@ export default function TimelineEditor({
                     />
                 </div>
 
-                {entry?._id && (
-                    <MediaManager
-                        media={media}
-                        onMediaChange={setMedia}
-                    />
-                )}
+                <MediaManager
+                    media={media}
+                    onMediaChange={handleMediaChange}
+                />
 
                 <div className="mt-6 border-t border-gray-100 pt-6 flex justify-end space-x-3">
                     <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         type="button"
-                        onClick={onClose}
+                        onClick={handleClose}
                         disabled={saving}
                         className="px-4 py-2 text-gray-600 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
