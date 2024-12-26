@@ -4,7 +4,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { env } from '@/env';
 import mongoose from 'mongoose';
-import dbConnect from "@/lib/db/mongoose";
+import dbConnect from '@/lib/db/mongoose';
 
 const execAsync = promisify(exec);
 
@@ -15,8 +15,17 @@ export interface BackupMetadata {
     documentCount: number;
 }
 
+export class BackupError extends Error {
+    constructor(message: string, public code: string) {
+        super(message);
+        this.name = 'BackupError';
+    }
+}
+
 export class BackupService {
     private backupDir: string;
+    private readonly validNameRegex = /^[a-zA-Z0-9_-]+$/;
+    private readonly maxNameLength = 100;
 
     constructor() {
         this.backupDir = path.join(process.cwd(), 'storage', 'backups');
@@ -24,6 +33,37 @@ export class BackupService {
 
     private async ensureBackupDir() {
         await fs.mkdir(this.backupDir, { recursive: true });
+    }
+
+    private validateBackupName(name: string) {
+        if (!name || name.trim().length === 0) {
+            throw new BackupError('Backup name cannot be empty', 'EMPTY_NAME');
+        }
+
+        if (name.length > this.maxNameLength) {
+            throw new BackupError(`Backup name cannot exceed ${this.maxNameLength} characters`, 'NAME_TOO_LONG');
+        }
+
+        if (!this.validNameRegex.test(name)) {
+            throw new BackupError('Backup name can only contain letters, numbers, underscores, and hyphens', 'INVALID_CHARS');
+        }
+
+        const reservedNames = ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4',
+            'COM5', 'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4',
+            'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'];
+
+        if (reservedNames.includes(name.toUpperCase())) {
+            throw new BackupError('Backup name cannot use reserved system names', 'RESERVED_NAME');
+        }
+    }
+
+    private async checkBackupExists(name: string): Promise<boolean> {
+        try {
+            await fs.access(path.join(this.backupDir, `${name}.gz`));
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     private async getTotalDocumentCount(): Promise<number> {
@@ -39,6 +79,13 @@ export class BackupService {
     }
 
     async createBackup(name: string): Promise<BackupMetadata> {
+        this.validateBackupName(name);
+
+        const exists = await this.checkBackupExists(name);
+        if (exists) {
+            throw new BackupError('A backup with this name already exists', 'DUPLICATE_NAME');
+        }
+
         await dbConnect();
         await this.ensureBackupDir();
         const filename = `${name}.gz`;
@@ -62,7 +109,7 @@ export class BackupService {
             return metadata;
         } catch (error) {
             console.error('failed to create backup:', error);
-            throw new Error('Failed to create backup');
+            throw new BackupError('Failed to create backup', 'CREATE_FAILED');
         }
     }
 
@@ -82,6 +129,11 @@ export class BackupService {
     }
 
     async restoreBackup(name: string): Promise<void> {
+        const exists = await this.checkBackupExists(name);
+        if (!exists) {
+            throw new BackupError('Backup not found', 'NOT_FOUND');
+        }
+
         await dbConnect();
         const filepath = path.join(this.backupDir, `${name}.gz`);
         const command = `mongorestore --uri="${env.MONGODB_URI}" --archive="${filepath}" --gzip --drop`;
@@ -90,7 +142,7 @@ export class BackupService {
             await execAsync(command);
         } catch (error) {
             console.error('failed to restore backup:', error);
-            throw new Error('Failed to restore backup');
+            throw new BackupError('Failed to restore backup', 'RESTORE_FAILED');
         }
     }
 
@@ -118,6 +170,11 @@ export class BackupService {
     }
 
     async deleteBackup(name: string): Promise<void> {
+        const exists = await this.checkBackupExists(name);
+        if (!exists) {
+            throw new BackupError('Backup not found', 'NOT_FOUND');
+        }
+
         const filepath = path.join(this.backupDir, `${name}.gz`);
         const metadataPath = path.join(this.backupDir, `${name}.meta.json`);
 
@@ -128,6 +185,18 @@ export class BackupService {
     }
 
     async renameBackup(oldName: string, newName: string): Promise<void> {
+        this.validateBackupName(newName);
+
+        const oldExists = await this.checkBackupExists(oldName);
+        if (!oldExists) {
+            throw new BackupError('Backup not found', 'NOT_FOUND');
+        }
+
+        const newExists = await this.checkBackupExists(newName);
+        if (newExists) {
+            throw new BackupError('A backup with the new name already exists', 'DUPLICATE_NAME');
+        }
+
         const oldPath = path.join(this.backupDir, `${oldName}.gz`);
         const newPath = path.join(this.backupDir, `${newName}.gz`);
         const oldMetaPath = path.join(this.backupDir, `${oldName}.meta.json`);

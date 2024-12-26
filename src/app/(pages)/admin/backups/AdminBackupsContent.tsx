@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { useToast } from "@/components/ui/Toast"
 import { BackupMetadata } from "@/lib/services/backupService"
 import FormModal from "@/components/ui/modal/FormModal"
@@ -8,98 +8,121 @@ import DeleteModal from "@/components/ui/modal/DeleteModal"
 import BackupListItem from "@/components/admin/backups/BackupListItem";
 import BackupsHeader from "@/components/admin/backups/BackupsHeader";
 import RestoreModal from "@/components/admin/backups/RestoreModal";
+import {CreateBackupForm, RenameBackupForm} from "@/components/admin/backups/BackupForms";
 
 export default function AdminBackupsContent() {
-    const [backups, setBackups] = useState<BackupMetadata[]>([])
-    const [loading, setLoading] = useState(true)
-    const [createModal, setCreateModal] = useState(false)
-    const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, backup?: BackupMetadata}>({ isOpen: false })
-    const [renameModal, setRenameModal] = useState<{isOpen: boolean, backup?: BackupMetadata}>({ isOpen: false })
-    const [restoreModal, setRestoreModal] = useState<{isOpen: boolean, backup?: BackupMetadata}>({ isOpen: false })
-    const [newBackupName, setNewBackupName] = useState("")
-    const [newName, setNewName] = useState("")
-    const { showToast } = useToast()
+    const [backups, setBackups] = useState<BackupMetadata[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [createModal, setCreateModal] = useState(false);
+    const [deleteModal, setDeleteModal] = useState<{isOpen: boolean, backup?: BackupMetadata}>({ isOpen: false });
+    const [renameModal, setRenameModal] = useState<{isOpen: boolean, backup?: BackupMetadata}>({ isOpen: false });
+    const [restoreModal, setRestoreModal] = useState<{isOpen: boolean, backup?: BackupMetadata}>({ isOpen: false });
+    const [newBackupName, setNewBackupName] = useState("");
+    const [newName, setNewName] = useState("");
+    const [isValidNewBackup, setIsValidNewBackup] = useState(false);
+    const [isValidRename, setIsValidRename] = useState(false);
+    const { showToast } = useToast();
 
     useEffect(() => {
-        fetchBackups()
-    }, [])
+        fetchBackups();
+    }, []);
 
     async function fetchBackups() {
         try {
-            const response = await fetch("/api/admin/backups")
-            if (!response.ok) throw new Error("Failed to fetch backups")
-            const data = await response.json()
-            setBackups(data)
+            const response = await fetch("/api/admin/backups");
+            if (!response.ok) throw new Error("Failed to fetch backups");
+            const data = await response.json();
+            setBackups(data);
         } catch (error) {
-            showToast("Failed to load backups", "error")
+            showToast("Failed to load backups", "error");
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
     }
 
     async function handleCreateBackup(e: React.FormEvent) {
-        e.preventDefault()
-        setCreateModal(false)
+        e.preventDefault();
+        setCreateModal(false);
 
         try {
             const response = await fetch("/api/admin/backups", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "create", name: newBackupName }),
-            })
+            });
 
-            if (!response.ok) throw new Error("Failed to create backup")
-            showToast("Backup created successfully", "success")
-            await fetchBackups()
+            if (!response.ok) {
+                const errorData = await response.json();
+                showToast(errorData.message || "Failed to create backup", "error");
+                setNewBackupName("");
+                setIsValidNewBackup(false);
+                return;
+            }
+
+            showToast("Backup created successfully", "success");
+            await fetchBackups();
         } catch (error) {
-            showToast("Failed to create backup", "error")
+            showToast("Failed to create backup", "error");
+            setNewBackupName("");
+            setIsValidNewBackup(false);
         }
 
-        setNewBackupName("")
+        setNewBackupName("");
+        setIsValidNewBackup(false);
     }
 
     async function handleRestoreBackup() {
-        if (!restoreModal.backup) return
+        if (!restoreModal.backup) return;
 
         try {
             const response = await fetch("/api/admin/backups", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "restore", name: restoreModal.backup.name }),
-            })
+            });
 
-            if (!response.ok) throw new Error("Failed to restore backup")
-            showToast("Backup restored successfully", "success")
+            if (!response.ok) {
+                const errorData = await response.json();
+                showToast(errorData.message || "Failed to restore backup", "error");
+                return;
+            }
+
+            showToast("Backup restored successfully", "success");
         } catch (error) {
-            showToast("Failed to restore backup", "error")
+            showToast("Failed to restore backup", "error");
         } finally {
-            setRestoreModal({ isOpen: false })
+            setRestoreModal({ isOpen: false });
         }
     }
 
     async function handleDeleteBackup() {
-        if (!deleteModal.backup) return
+        if (!deleteModal.backup) return;
 
         try {
             const response = await fetch("/api/admin/backups", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "delete", name: deleteModal.backup.name }),
-            })
+            });
 
-            if (!response.ok) throw new Error("Failed to delete backup")
-            showToast("Backup deleted successfully", "success")
-            await fetchBackups()
+            if (!response.ok) {
+                const errorData = await response.json();
+                showToast(errorData.message || "Failed to delete backup", "error");
+                return;
+            }
+
+            showToast("Backup deleted successfully", "success");
+            await fetchBackups();
         } catch (error) {
-            showToast("Failed to delete backup", "error")
+            showToast("Failed to delete backup", "error");
         }
 
-        setDeleteModal({ isOpen: false })
+        setDeleteModal({ isOpen: false });
     }
 
     async function handleRenameBackup(e: React.FormEvent) {
-        e.preventDefault()
-        if (!renameModal.backup) return
+        e.preventDefault();
+        if (!renameModal.backup) return;
 
         try {
             const response = await fetch("/api/admin/backups", {
@@ -110,25 +133,47 @@ export default function AdminBackupsContent() {
                     name: renameModal.backup.name,
                     newName
                 }),
-            })
+            });
 
-            if (!response.ok) throw new Error("Failed to rename backup")
-            showToast("Backup renamed successfully", "success")
-            await fetchBackups()
+            if (!response.ok) {
+                const errorData = await response.json();
+                showToast(errorData.message || "Failed to rename backup", "error");
+                setNewName("");
+                setIsValidRename(false);
+                return;
+            }
+
+            showToast("Backup renamed successfully", "success");
+            await fetchBackups();
         } catch (error) {
-            showToast("Failed to rename backup", "error")
+            showToast("Failed to rename backup", "error");
+            setNewName("");
+            setIsValidRename(false);
         }
 
-        setRenameModal({ isOpen: false })
-        setNewName("")
+        setRenameModal({ isOpen: false });
+        setNewName("");
+        setIsValidRename(false);
     }
+
+    const handleCreateModalClose = () => {
+        setCreateModal(false);
+        setNewBackupName("");
+        setIsValidNewBackup(false);
+    };
+
+    const handleRenameModalClose = () => {
+        setRenameModal({ isOpen: false });
+        setNewName("");
+        setIsValidRename(false);
+    };
 
     if (loading) {
         return (
             <div className="flex justify-center p-8">
                 <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
             </div>
-        )
+        );
     }
 
     return (
@@ -158,46 +203,34 @@ export default function AdminBackupsContent() {
 
             <FormModal
                 isOpen={createModal}
-                onClose={() => setCreateModal(false)}
+                onClose={handleCreateModalClose}
+                onSubmit={handleCreateBackup}
                 title="Create Backup"
                 description="Create a new backup of the current database state"
+                submitText="Create Backup"
+                isValid={isValidNewBackup}
             >
-                <form id="modal-form" onSubmit={handleCreateBackup}>
-                    <div>
-                        <label className="block text-sm font-medium mb-2">
-                            Backup Name
-                        </label>
-                        <input
-                            type="text"
-                            value={newBackupName}
-                            onChange={(e) => setNewBackupName(e.target.value)}
-                            className="w-full px-3 py-2 border rounded-md"
-                            required
-                        />
-                    </div>
-                </form>
+                <CreateBackupForm
+                    value={newBackupName}
+                    onChange={(e) => setNewBackupName(e.target.value)}
+                    onValidityChange={setIsValidNewBackup}
+                />
             </FormModal>
 
             <FormModal
                 isOpen={renameModal.isOpen}
-                onClose={() => setRenameModal({ isOpen: false })}
+                onClose={handleRenameModalClose}
+                onSubmit={handleRenameBackup}
                 title="Rename Backup"
                 description="Enter a new name for the backup"
+                submitText="Rename Backup"
+                isValid={isValidRename}
             >
-                <form id="modal-form" onSubmit={handleRenameBackup}>
-                    <div>
-                        <label className="block text-sm font-medium mb-2">
-                            New Name
-                        </label>
-                        <input
-                            type="text"
-                            value={newName}
-                            onChange={(e) => setNewName(e.target.value)}
-                            className="w-full px-3 py-2 border rounded-md"
-                            required
-                        />
-                    </div>
-                </form>
+                <RenameBackupForm
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    onValidityChange={setIsValidRename}
+                />
             </FormModal>
 
             <RestoreModal
@@ -215,5 +248,5 @@ export default function AdminBackupsContent() {
                 description="Are you sure you want to delete this backup? This action cannot be undone."
             />
         </div>
-    )
+    );
 }

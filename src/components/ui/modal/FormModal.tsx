@@ -1,31 +1,43 @@
-"use client"
+"use client";
 
-import { ReactNode } from "react"
-import BaseModal from "./BaseModal"
-import { motion } from "framer-motion"
+import { ReactNode, FormEvent } from "react";
+import BaseModal from "./BaseModal";
+import { motion } from "framer-motion";
 
 interface FormModalProps {
-    isOpen: boolean
-    onClose: () => void
-    title: string
-    children: ReactNode
-    description?: string
-    icon?: React.ElementType
+    isOpen: boolean;
+    onClose: () => void;
+    onSubmit: (e: FormEvent) => void;
+    title: string;
+    children: ReactNode;
+    description?: string;
+    icon?: React.ElementType;
+    submitText?: string;
+    isValid?: boolean;
 }
 
-export default function FormModal(props: FormModalProps) {
+export default function FormModal({
+    isOpen,
+    onClose,
+    onSubmit,
+    title,
+    children,
+    description,
+    icon: Icon,
+    submitText = 'Save Changes',
+    isValid = true
+}: FormModalProps) {
     return (
-        <BaseModal {...props}>
-            <div>
-                {props.children}
+        <BaseModal isOpen={isOpen} onClose={onClose} title={title} description={description} icon={Icon}>
+            <form onSubmit={onSubmit}>
+                {children}
 
                 <div className="mt-6 border-t border-gray-100 pt-6 flex justify-end space-x-3">
                     <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="px-4 py-2 text-gray-600 hover:text-gray-700 bg-gray-100
-                                 hover:bg-gray-200 rounded-lg transition-colors"
-                        onClick={props.onClose}
+                        className="px-4 py-2 text-gray-600 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                        onClick={onClose}
                         type="button"
                     >
                         Cancel
@@ -34,14 +46,15 @@ export default function FormModal(props: FormModalProps) {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         type="submit"
-                        form="modal-form"
-                        className="px-4 py-2 text-white bg-blue-500 hover:bg-blue-600
-                                 rounded-lg transition-colors"
+                        disabled={!isValid}
+                        className={`px-4 py-2 text-white rounded-lg transition-colors ${
+                            isValid ? 'bg-blue-500 hover:bg-blue-600' : 'bg-blue-300 cursor-not-allowed'
+                        }`}
                     >
-                        Save Changes
+                        {submitText}
                     </motion.button>
                 </div>
-            </div>
+            </form>
         </BaseModal>
-    )
+    );
 }
