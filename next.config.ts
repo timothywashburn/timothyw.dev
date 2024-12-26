@@ -8,7 +8,6 @@ const config: NextConfig = {
                 hostname: '**',
             },
         ],
-        domains: [process.env.VERCEL_URL || 'localhost']
     }
 }
 

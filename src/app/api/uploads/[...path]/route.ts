@@ -6,11 +6,15 @@ export async function GET(
     request: Request,
     { params }: { params: { path: string[] } }
 ) {
-    const pathSegments = params.path
+    const pathSegments = await Promise.resolve(params.path)
     const filepath = path.join(process.cwd(), "storage", "uploads", ...pathSegments)
 
     try {
         const file = await readFile(filepath)
+
+        if (pathSegments.includes('..')) {
+            return new NextResponse('Invalid path', { status: 400 })
+        }
 
         const ext = path.extname(filepath).toLowerCase()
         const contentType = {
