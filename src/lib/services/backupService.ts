@@ -91,29 +91,26 @@ export class BackupService {
     }
 
     async listBackups(): Promise<BackupMetadata[]> {
-        await this.ensureBackupDir()
-
-        const files = await fs.readdir(this.backupDir)
-        const backups: BackupMetadata[] = []
+        const backupDir = path.join(process.cwd(), 'storage/backups');
+        const files = await fs.readdir(backupDir);
+        const backups: BackupMetadata[] = [];
 
         for (const file of files) {
-            if (file.endsWith('.gz')) {
-                const name = file.replace('.gz', '')
-                const filepath = path.join(this.backupDir, file)
-                const stats = await fs.stat(filepath)
+            if (!file.endsWith('.meta.json')) continue;
 
-                const metadata = await this.loadMetadata(name) || {
-                    name,
-                    createdAt: stats.birthtime,
-                    size: stats.size,
-                    documentCount: 0
-                }
-
-                backups.push(metadata)
+            try {
+                const metaContent = await fs.readFile(path.join(backupDir, file), 'utf-8');
+                const backup = JSON.parse(metaContent) as BackupMetadata;
+                backups.push(backup);
+            } catch (error) {
+                console.error('failed to read backup metadata:', error);
+                continue;
             }
         }
 
-        return backups.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        return backups.sort((a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
     }
 
     async deleteBackup(name: string): Promise<void> {
