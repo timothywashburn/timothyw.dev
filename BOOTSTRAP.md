@@ -6,16 +6,21 @@ This document provides step-by-step instructions for setting up the infrastructu
 
 - K3s cluster running
 - kubectl configured to access the cluster
+- Helmfile installed
 
-## Step 1: Install ArgoCD
+## Step 1: Install Infrastructure Components
+
+Use Helmfile to install the core infrastructure components:
 
 ```bash
-# Create ArgoCD namespace
-kubectl create namespace argocd
-
-# Install ArgoCD
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+# Install cert-manager, MetalLB, and ArgoCD with proper dependencies
+helmfile sync
 ```
+
+This installs:
+- **cert-manager** in `cert-manager` namespace (with CRDs)
+- **MetalLB** in `metallb-system` namespace  
+- **ArgoCD** in `argocd` namespace (in insecure mode for Traefik)
 
 ## Step 2: Access ArgoCD
 
@@ -51,16 +56,15 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 3. Click **CREATE**
 
-## Step 4: Sync the Infrastructure Application
+## Step 4: Sync the Infrastructure Configuration
 
 1. In ArgoCD UI, find your `timothyw-infrastructure` application
 2. Click **SYNC**
-3. ArgoCD will automatically install the required dependencies:
-   - cert-manager (with CRDs)
-   - MetalLB (with CRDs)
-   - ArgoCD IngressRoute
-   - Kubernetes Dashboard
+3. ArgoCD will deploy the configuration resources:
    - ClusterIssuer for Let's Encrypt
+   - MetalLB IP pool configuration
+   - ArgoCD IngressRoute
+   - Kubernetes Dashboard (if enabled)
 4. Click **SYNCHRONIZE**
 
 ## Step 5: DNS Configuration
@@ -73,11 +77,11 @@ Point your DNS records to your cluster's external IP:
 
 After DNS propagation, you should be able to access:
 - ArgoCD: https://argocd.timothyw.dev
-- Kubernetes Dashboard: https://k8s.timothyw.dev
+- Kubernetes Dashboard: https://k8s.timothyw.dev (if enabled)
 
 ## Next Steps
 
-Once ArgoCD is managing your infrastructure, you can:
+Once ArgoCD is managing your infrastructure configuration, you can:
 1. Add more applications to ArgoCD
 2. Set up automatic sync policies
 3. Configure RBAC and SSO
@@ -85,6 +89,7 @@ Once ArgoCD is managing your infrastructure, you can:
 
 ## Notes
 
-- The helm chart includes cert-manager and MetalLB as dependencies, so ArgoCD will install everything needed
-- If sync fails initially, wait a moment for CRDs to be installed and try again
-- Once external access is working, you can switch from port-forwarding to the web interface
+- **Helmfile** handles the initial infrastructure installation (run once)
+- **ArgoCD** handles ongoing GitOps for configuration and applications  
+- Infrastructure components are installed in their proper namespaces
+- If sync fails, ensure all infrastructure pods are running first

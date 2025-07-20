@@ -1,0 +1,41 @@
+repositories:
+  - name: jetstack
+    url: https://charts.jetstack.io
+  - name: metallb
+    url: https://metallb.github.io/metallb
+  - name: argo
+    url: https://argoproj.github.io/argo-helm
+
+releases:
+  - name: cert-manager
+    namespace: cert-manager
+    chart: jetstack/cert-manager
+    version: v1.15.3
+    createNamespace: true
+    set:
+      - name: crds.enabled
+        value: true
+
+  - name: metallb
+    namespace: metallb-system
+    chart: metallb/metallb
+    version: 0.14.8
+    createNamespace: true
+    needs:
+      - cert-manager/cert-manager
+
+  - name: argocd
+    namespace: argocd
+    chart: argo/argo-cd
+    version: 7.7.3
+    createNamespace: true
+    values:
+      - server:
+          insecure: true
+          service:
+            type: ClusterIP
+        configs:
+          params:
+            server.insecure: true
+    needs:
+      - metallb-system/metallb
