@@ -2,7 +2,7 @@
 global:
   domain: timothyw.dev
   dashboardDomain: k8s.timothyw.dev
-  argoCDDomain: argocd.timothyw.dev
+  argoCDDomain: argo.timothyw.dev
   loadBalancerIP: "51.81.211.182"
   certManagerEmail: "timothyrwashburn@gmail.com"
 
@@ -17,6 +17,6 @@ infrastructure:
   metallb:
     enabled: true
   dashboard:
-    enabled: false
+    enabled: true
   argocd:
     enabled: true

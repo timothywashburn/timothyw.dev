@@ -24,6 +24,14 @@ releases:
 #    needs:
 #      - cert-manager/cert-manager
 
+  - name: kubernetes-dashboard
+    namespace: kubernetes-dashboard
+    chart: kubernetes-dashboard/kubernetes-dashboard
+    version: 7.13.0
+    createNamespace: true
+    needs:
+      - metallb-system/metallb
+
   - name: argocd
     namespace: argocd
     chart: argo/argo-cd
