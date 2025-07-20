@@ -2,7 +2,7 @@ node_modules/
 .next/
 .idea/
 storage/
-scripts/
+ignore-*
 .DS_Store
 next-env.d.ts
 .env*

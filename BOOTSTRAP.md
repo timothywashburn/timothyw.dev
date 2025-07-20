@@ -4,25 +4,34 @@ This document provides step-by-step instructions for setting up the infrastructu
 
 ## Prerequisites
 
-- K3s cluster running
-- kubectl configured to access the cluster
-- Helmfile installed
+- kubectl installed locally
+- Helmfile installed locally
+- SSH access (via ssh key) to server
 
-## Step 1: Install Infrastructure Components
+## Step 1: Install K3s
+
+```bash
+curl -sfL https://get.k3s.io | sh -
+sudo k3s kubectl get nodes
+```
+
+## Step 2: Configure Local kubectl Access
+
+Run the setup script to add a new context to your local `kubectl` configuration:
+
+```bash
+./scripts/setup-kubeconfig.sh USER@VPS_IP CONTEXT_NAME
+```
+
+## Step 3: Install Infrastructure Components
 
 Use Helmfile to install the core infrastructure components:
 
 ```bash
-# Install cert-manager, MetalLB, and ArgoCD with proper dependencies
 helmfile sync
 ```
 
-This installs:
-- **cert-manager** in `cert-manager` namespace (with CRDs)
-- **MetalLB** in `metallb-system` namespace  
-- **ArgoCD** in `argocd` namespace (in insecure mode for Traefik)
-
-## Step 2: Access ArgoCD
+## Step 4: Access ArgoCD
 
 ```bash
 # Get the admin password
@@ -35,47 +44,41 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 - Open browser to https://localhost:8080
 - Username: `admin`
 - Password: (from the command above)
-- Accept the self-signed certificate
 
-## Step 3: Configure ArgoCD to Manage Infrastructure
+## Step 5: Configure ArgoCD to Manage Infrastructure
 
 1. In the ArgoCD UI, click **"+ NEW APP"**
 2. Configure the application:
-   - **Application Name**: `timothyw-infrastructure`
+   - **Application Name**: `timothyw-system`
    - **Project**: `default`
    - **Sync Policy**: `Manual`
    
    **Source:**
-   - **Repository URL**: `https://github.com/your-username/timothyw.dev` (update with your repo)
+   - **Repository URL**: `https://github.com/timothywashburn/timothyw.dev`
    - **Revision**: `HEAD`
    - **Path**: `helm`
    
    **Destination:**
-   - **Cluster URL**: `https://kubernetes.default.svc`
+   - **Cluster URL**: `https://kubernetes.default.svc` (internal cluster URL)
    - **Namespace**: `timothyw-system`
 
 3. Click **CREATE**
 
-## Step 4: Sync the Infrastructure Configuration
+## Step 6: Sync the Infrastructure Configuration
 
-1. In ArgoCD UI, find your `timothyw-infrastructure` application
+1. In ArgoCD, open the application
 2. Click **SYNC**
-3. ArgoCD will deploy the configuration resources:
-   - ClusterIssuer for Let's Encrypt
-   - MetalLB IP pool configuration
-   - ArgoCD IngressRoute
-   - Kubernetes Dashboard (if enabled)
-4. Click **SYNCHRONIZE**
+3. Let ArgoCD deploy the infrastructure components
 
-## Step 5: DNS Configuration
+## Step 7: DNS Configuration
 
-Point your DNS records to your cluster's external IP:
-- `argocd.timothyw.dev` → `51.81.211.182`
-- `k8s.timothyw.dev` → `51.81.211.182`
+Point DNS records to cluster's external IP:
+- `argo.timothyw.dev` → `EXTERNAL_IP`
+- `k8s.timothyw.dev` → `EXTERNAL_IP`
 
-## Step 6: Get Kubernetes Dashboard Token
+## Step 8: Get Kubernetes Dashboard Token
 
-To access the Kubernetes Dashboard, you'll need the admin token:
+To access the Kubernetes Dashboard, get the admin token:
 
 ```bash
 kubectl get secret admin-user-token -n kubernetes-dashboard -o jsonpath='{.data.token}' | base64 -d
@@ -83,23 +86,8 @@ kubectl get secret admin-user-token -n kubernetes-dashboard -o jsonpath='{.data.
 
 This token never expires and provides full cluster admin access.
 
-## Step 7: Verify Setup
+## Step 9: Verify Setup
 
-After DNS propagation, you should be able to access:
-- ArgoCD: https://argocd.timothyw.dev
-- Kubernetes Dashboard: https://k8s.timothyw.dev (use the token above to login)
-
-## Next Steps
-
-Once ArgoCD is managing your infrastructure configuration, you can:
-1. Add more applications to ArgoCD
-2. Set up automatic sync policies
-3. Configure RBAC and SSO
-4. Set up monitoring and alerts
-
-## Notes
-
-- **Helmfile** handles the initial infrastructure installation (run once)
-- **ArgoCD** handles ongoing GitOps for configuration and applications  
-- Infrastructure components are installed in their proper namespaces
-- If sync fails, ensure all infrastructure pods are running first
+After DNS propagation, access the dashboards here:
+- ArgoCD: https://argo.timothyw.dev
+- Kubernetes Dashboard: https://k8s.timothyw.dev
