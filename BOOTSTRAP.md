@@ -73,11 +73,21 @@ Point your DNS records to your cluster's external IP:
 - `argocd.timothyw.dev` → `51.81.211.182`
 - `k8s.timothyw.dev` → `51.81.211.182`
 
-## Step 6: Verify Setup
+## Step 6: Get Kubernetes Dashboard Token
+
+To access the Kubernetes Dashboard, you'll need the admin token:
+
+```bash
+kubectl get secret admin-user-token -n kubernetes-dashboard -o jsonpath='{.data.token}' | base64 -d
+```
+
+This token never expires and provides full cluster admin access.
+
+## Step 7: Verify Setup
 
 After DNS propagation, you should be able to access:
 - ArgoCD: https://argocd.timothyw.dev
-- Kubernetes Dashboard: https://k8s.timothyw.dev (if enabled)
+- Kubernetes Dashboard: https://k8s.timothyw.dev (use the token above to login)
 
 ## Next Steps
 
