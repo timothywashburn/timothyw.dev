@@ -1,0 +1,50 @@
+# Global configuration
+global:
+  domain: timothyw.dev
+  dashboardDomain: k8s.timothyw.dev
+  argoCDDomain: argocd.timothyw.dev
+  loadBalancerIP: "51.81.211.182"
+  certManagerEmail: "timothyrwashburn@gmail.com"
+
+# Infrastructure components
+infrastructure:
+  traefik:
+    enabled: false
+  certManager:
+    enabled: true
+  metallb:
+    enabled: true
+  dashboard:
+    enabled: false
+  argocd:
+    enabled: true
+
+# Traefik configuration
+traefik:
+  service:
+    type: LoadBalancer
+    annotations:
+      metallb.universe.tf/allow-shared-ip: "shared-ip-key"
+      metallb.universe.tf/loadBalancerIPs: "51.81.211.182"
+  ports:
+    web:
+      port: 80
+      expose:
+        default: true
+      exposedPort: 80
+    websecure:
+      port: 443
+      expose:
+        default: true  
+      exposedPort: 443
+  ingressRoute:
+    dashboard:
+      enabled: false
+
+# Cert-manager configuration
+cert-manager:
+  crds:
+    enabled: true
+
+# MetalLB configuration
+metallb: {}
