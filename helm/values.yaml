@@ -10,8 +10,10 @@ global:
 infrastructure:
   traefik:
     enabled: false
+    rbacFix:
+      enabled: true
   certManager:
-    enabled: true
+    enabled: false
   metallb:
     enabled: true
   dashboard:

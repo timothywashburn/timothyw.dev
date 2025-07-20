@@ -13,4 +13,9 @@ spec:
     - http01:
         ingress:
           class: traefik
+          podTemplate:
+            metadata:
+              annotations:
+                # Ensure the challenge pods use HTTP (not HTTPS)
+                traefik.ingress.kubernetes.io/router.entrypoints: web
 {{- end }}

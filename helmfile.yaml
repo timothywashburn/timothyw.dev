@@ -7,22 +7,22 @@ repositories:
     url: https://argoproj.github.io/argo-helm
 
 releases:
-  - name: cert-manager
-    namespace: cert-manager
-    chart: jetstack/cert-manager
-    version: v1.15.3
-    createNamespace: true
-    set:
-      - name: crds.enabled
-        value: true
+#  - name: cert-manager
+#    namespace: cert-manager
+#    chart: jetstack/cert-manager
+#    version: v1.15.3
+#    createNamespace: true
+#    set:
+#      - name: crds.enabled
+#        value: true
 
   - name: metallb
     namespace: metallb-system
     chart: metallb/metallb
     version: 0.14.8
     createNamespace: true
-    needs:
-      - cert-manager/cert-manager
+#    needs:
+#      - cert-manager/cert-manager
 
   - name: argocd
     namespace: argocd
@@ -37,5 +37,7 @@ releases:
         configs:
           params:
             server.insecure: true
+          cm:
+            url: https://argocd.timothyw.dev
     needs:
       - metallb-system/metallb
