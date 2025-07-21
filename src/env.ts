@@ -7,8 +7,12 @@ const requiredEnvs = {
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET!
 } as const
 
-Object.entries(requiredEnvs).forEach(([key, value]) => {
-    if (!value) throw new Error(`Missing required environment variable: ${key}`)
-})
+// Only validate environment variables at runtime, not during build
+// Skip validation during Next.js build phase
+if (process.env.NEXT_PHASE !== 'phase-production-build') {
+    Object.entries(requiredEnvs).forEach(([key, value]) => {
+        if (!value) throw new Error(`Missing required environment variable: ${key}`)
+    })
+}
 
 export const env = requiredEnvs
