@@ -6,3 +6,4 @@ ignore-*
 .DS_Store
 next-env.d.ts
 .env*
+create-secrets.sh

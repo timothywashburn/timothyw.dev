@@ -8,7 +8,8 @@ const config: NextConfig = {
                 hostname: '**',
             },
         ],
-    }
+    },
+    output: 'standalone',
 }
 
 export default config
