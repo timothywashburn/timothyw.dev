@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: timothyw-dev
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: timothyw-dev
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: timothyw-dev
+  template:
+    metadata:
+      labels:
+        app: timothyw-dev
+    spec:
+      imagePullSecrets:
+      - name: dockerhub-registry
+      containers:
+      - name: timothyw-dev
+        image: {{ .Values.image.registry }}/timothyw.dev:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: timothyw-dev-secrets
+              key: MONGODB_URI
+        - name: GOOGLE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: timothyw-dev-secrets
+              key: GOOGLE_CLIENT_ID
+        - name: GOOGLE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: timothyw-dev-secrets
+              key: GOOGLE_CLIENT_SECRET
+        - name: PIT_ACCESS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: timothyw-dev-secrets
+              key: PIT_ACCESS_PASSWORD
+        - name: NEXTAUTH_URL
+          valueFrom:
+            secretKeyRef:
+              name: timothyw-dev-secrets
+              key: NEXTAUTH_URL
+        - name: NEXTAUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: timothyw-dev-secrets
+              key: NEXTAUTH_SECRET
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
