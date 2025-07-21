@@ -3,9 +3,7 @@ kind: Ingress
 metadata:
   name: timothyw-dev-ingress
   namespace: {{ .Values.namespace }}
-  annotations:
-    traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.tls.certresolver: "letsencrypt"
+  annotations: {}
 spec:
   ingressClassName: {{ .Values.ingress.ingressClassName }}
   rules:
@@ -19,7 +17,3 @@ spec:
             name: timothyw-dev-service
             port:
               number: 80
-  tls:
-  - hosts:
-    - {{ .Values.ingress.host }}
-    secretName: timothyw-dev-tls
